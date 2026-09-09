@@ -511,7 +511,30 @@ function looksLikeQuestion(text) {
 
 function isShortAction(text) {
   const t = normalizeTalk(text);
-  return /^(report|budget|compare|download|validation|help)(\s.*)?$/.test(t);
+  return /^(report|budget|compare|download|validation|help|clear|cls|clr)(\s.*)?$/.test(t);
+}
+
+function isClear(text) {
+  const t = normalizeTalk(text);
+  return /^(clear|cls|clr|\/clear|\/cls)$/.test(t);
+}
+
+function clearChat() {
+  $("thread").innerHTML = "";
+  $("chips").innerHTML = "";
+  const input = $("composerInput");
+  if (input) input.value = "";
+  greet(state.loaded);
+  if (state.awaitingFormulas) {
+    addMessage(
+      "bot",
+      `<p>Do you have the formulas with you? If yes, upload them in Excel. If no, I will use the built-in formulas and calculate.</p>`
+    );
+    setChips([
+      { label: "Yes, I'll upload", cmd: "yes" },
+      { label: "No, use built-in formulas", cmd: "no" },
+    ]);
+  }
 }
 
 const FAQ_STOP = new Set(["the", "a", "an", "is", "do", "does", "did", "i", "you", "u", "we", "me", "to", "of", "for", "in", "on", "my", "please", "pls", "plz", "and", "or", "this", "that", "it", "be", "was", "are"]);
@@ -587,6 +610,7 @@ function interpret(text) {
   const lower = raw.toLowerCase();
   if (!raw) return { type: "empty" };
   if (raw === "__attach__") return { type: "attach" };
+  if (isClear(raw)) return { type: "clear" };
   if (state.awaitingFormulas && isYes(raw)) return { type: "formula_yes" };
   if (state.awaitingFormulas && isNo(raw)) return { type: "formula_no" };
   if (isGreeting(raw)) return { type: "greet" };
@@ -622,6 +646,10 @@ function interpret(text) {
 async function handleText(text, fromChip) {
   if (text === "__attach__") {
     $("fileInput").click();
+    return;
+  }
+  if (isClear(text)) {
+    clearChat();
     return;
   }
   if (!fromChip) addMessage("user", text);
