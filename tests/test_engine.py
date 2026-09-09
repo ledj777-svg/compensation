@@ -97,7 +97,7 @@ def test_above_band_and_below_median_positions():
     assert aligned == SalaryPosition.MARKET_ALIGNED
 
 
-def test_missing_band_applies_increment_only():
+def test_missing_band_still_builds_dynamic_values():
     result = recommend_employee(
         _employee(),
         [],
@@ -105,9 +105,9 @@ def test_missing_band_applies_increment_only():
         CORRECTIONS,
     )
     assert result.increment_pct == 0.10
-    assert result.correction_pct == 0.0
-    assert result.recommended_salary == 11.0
-    assert any("band not found" in flag.lower() for flag in result.flags)
+    assert result.compa_ratio is not None
+    assert result.salary_position != "Unknown"
+    assert result.recommended_salary > 0
 
 
 def test_sample_workbook_round_trip():

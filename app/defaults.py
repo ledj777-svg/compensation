@@ -89,7 +89,7 @@ def _pick_points(grade: str, years: float | None) -> tuple[float, float, float, 
 
 def _salary_stats(values: list[float]) -> tuple[float, float, float] | None:
     salaries = [float(value) for value in values if value is not None]
-    if len(salaries) < 3:
+    if len(salaries) < 2:
         return None
     return (round(min(salaries), 4), round(float(median(salaries)), 4), round(max(salaries), 4))
 

@@ -27,7 +27,7 @@ function pct(value) {
 }
 
 function ratio(value) {
-  if (value === null || value === undefined) return "—";
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "0.00";
   return Number(value).toFixed(2);
 }
 

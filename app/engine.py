@@ -164,47 +164,66 @@ def recommend_employee(
 ) -> CompensationResult:
     flags: list[str] = []
     band = find_salary_band(employee, bands, band_index)
-
-    band_min = band.min_salary if band else None
-    band_median = band.median_salary if band else None
-    band_max = band.max_salary if band else None
-    band_years = band.years_at_level if band else None
-
-    compa_ratio = None
-    position = SalaryPosition.UNKNOWN
     if band is None:
-        flags.append("Salary band not found - correction skipped")
-    else:
-        if band.median_salary <= 0:
-            flags.append("Median salary is missing or zero - compa ratio skipped")
-        else:
-            compa_ratio = round(employee.current_salary / band.median_salary, 4)
-        position = classify_salary_position(
-            employee.current_salary,
-            band.min_salary,
-            band.median_salary,
-            band.max_salary,
+        salary = employee.current_salary if employee.current_salary else 1.0
+        band = SalaryBand(
+            department=employee.department or "General",
+            grade=employee.grade or "A1",
+            years_at_level=float(employee.years_at_level or 0),
+            min_salary=round(salary * 0.8, 4),
+            median_salary=round(salary, 4),
+            max_salary=round(salary * 1.4, 4),
+            raw_years_label="dynamic",
         )
+        flags.append("Band built dynamically from current salary")
+
+    band_min = band.min_salary
+    band_median = band.median_salary
+    band_max = band.max_salary
+    band_years = band.years_at_level
+
+    if band.median_salary <= 0:
+        compa_ratio = 1.0
+        flags.append("Median salary was zero - Compa Ratio set to 1.00")
+    else:
+        compa_ratio = round(employee.current_salary / band.median_salary, 4)
+    position = classify_salary_position(
+        employee.current_salary,
+        band.min_salary,
+        band.median_salary,
+        band.max_salary,
+    )
 
     increment_rule = find_increment(employee, increment_rules)
-    if increment_rule is None:
-        increment_pct = 0.0
-        flags.append("Increment rule not found - increment treated as 0%")
-    else:
+    if increment_rule is not None:
         increment_pct = increment_rule.increment_pct
-
-    if band is None:
-        correction_pct = 0.0
     else:
-        correction_pct, correction_flag = determine_correction(
-            position,
-            employee.current_salary,
-            band_min,
-            compa_ratio,
-            correction_rules,
-        )
-        if correction_flag:
-            flags.append(correction_flag)
+        from app.defaults import DEFAULT_RATING_INCREMENT
+
+        rating = employee.performance_rating
+        if rating in DEFAULT_RATING_INCREMENT:
+            increment_pct = DEFAULT_RATING_INCREMENT[rating]
+        elif rating is not None:
+            clamped = min(5, max(1, int(rating)))
+            increment_pct = DEFAULT_RATING_INCREMENT[clamped]
+        else:
+            increment_pct = DEFAULT_RATING_INCREMENT[3]
+        flags.append("Increment taken from rating formula")
+
+    if not correction_rules:
+        from app.defaults import DEFAULT_CORRECTION_RULES
+
+        correction_rules = list(DEFAULT_CORRECTION_RULES)
+
+    correction_pct, correction_flag = determine_correction(
+        position,
+        employee.current_salary,
+        band_min,
+        compa_ratio,
+        correction_rules,
+    )
+    if correction_flag:
+        flags.append(correction_flag)
 
     total_increase_pct = round(increment_pct + correction_pct, 6)
     increment_amount = round(employee.current_salary * increment_pct, 4)
@@ -262,6 +281,14 @@ def recommend_all(
     increment_rules: list[IncrementRule],
     correction_rules: list[CorrectionRule],
 ) -> list[CompensationResult]:
+    from app.defaults import ensure_coverage
+
+    increment_rules, bands, correction_rules = ensure_coverage(
+        employees,
+        increment_rules or [],
+        bands or [],
+        correction_rules or [],
+    )
     index = build_band_index(bands)
     return [
         recommend_employee(employee, bands, increment_rules, correction_rules, index)
