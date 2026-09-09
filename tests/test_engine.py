@@ -99,8 +99,8 @@ def test_above_band_and_below_median_positions():
 
 def test_missing_band_applies_increment_only():
     result = recommend_employee(
-        _employee(department="Legal"),
-        BANDS,
+        _employee(),
+        [],
         INCREMENTS,
         CORRECTIONS,
     )
