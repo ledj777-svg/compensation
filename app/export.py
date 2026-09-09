@@ -113,7 +113,7 @@ def _write_reports(sheet: Worksheet, reports: Iterable[CompensationResult], titl
         for col_index, (_, field, number_format, _) in enumerate(REPORT_COLUMNS, start=1):
             value = data.get(field)
             if field == "flags":
-                value = "; ".join(value or [])
+                value = "; ".join(value or []) or "No special flags"
             cell = sheet.cell(row_index, col_index, value)
             _apply_cell(cell, number_format)
             if fill:
@@ -313,7 +313,7 @@ def build_comparison_workbook(reports: list[CompensationResult]) -> bytes:
             data = result.to_dict()
             value = data.get(field)
             if field == "flags":
-                value = "; ".join(value or [])
+                value = "; ".join(value or []) or "No special flags"
             cell = sheet.cell(row_index, col_index, value)
             _apply_cell(cell, number_format)
     sheet.column_dimensions["A"].width = 28

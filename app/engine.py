@@ -241,6 +241,13 @@ def recommend_employee(
     if employee.performance_rating is not None and employee.performance_rating >= 4:
         if position in {SalaryPosition.BELOW_MINIMUM, SalaryPosition.BELOW_MEDIAN}:
             flags.append("High performer below market - priority correction")
+    if not flags:
+        if correction_pct == 0 and increment_pct > 0:
+            flags.append(f"{position.value} - increment only, no salary correction")
+        elif increment_pct == 0 and correction_pct == 0:
+            flags.append(f"{position.value} - no increment and no correction")
+        else:
+            flags.append(f"{position.value} - standard recommendation")
 
     return CompensationResult(
         employee_id=employee.employee_id,
