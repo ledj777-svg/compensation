@@ -166,7 +166,6 @@ function afterLoadChips() {
   setChips([
     { label: "Compensation report", cmd: "report" },
     { label: "Budget", cmd: "budget" },
-    { label: "Compare 1001, 1002", cmd: "compare 1001, 1002" },
     { label: "Download Excel", cmd: "download report" },
   ]);
 }
