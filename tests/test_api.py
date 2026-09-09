@@ -114,3 +114,55 @@ def test_employee_only_waits_then_uses_defaults():
     reports = client.get("/api/reports").json()["reports"]
     ananya = next(row for row in reports if row["employee_id"] == "1001")
     assert ananya["recommended_salary"] == 11.8
+
+
+def test_new_employee_file_asks_for_formulas_even_after_full_workbook():
+    from io import BytesIO
+
+    from openpyxl import Workbook
+
+    first = client.post(
+        "/api/upload",
+        files={
+            "file": (
+                "sample.xlsx",
+                build_sample_workbook(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert first.status_code == 200
+    assert first.json()["dataset"]["awaiting_formulas"] is False
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(
+        [
+            "Employee ID",
+            "Employee Name",
+            "Department",
+            "Grade",
+            "Designation",
+            "Current Salary",
+            "Performance Rating",
+            "Years At Level",
+        ]
+    )
+    sheet.append([1001, "Ananya Rao", "Technology", "A1", "Software Engineer", 10, 4, 2])
+    buffer = BytesIO()
+    workbook.save(buffer)
+    second = client.post(
+        "/api/upload",
+        files={
+            "file": (
+                "HR.xlsx",
+                buffer.getvalue(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+    assert second.status_code == 200, second.text
+    body = second.json()["dataset"]
+    assert body["awaiting_formulas"] is True
+    assert body["employee_count"] == 1
+    assert "Increment_Grid" in body["missing_sheets"]

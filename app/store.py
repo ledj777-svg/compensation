@@ -25,12 +25,21 @@ class DatasetStore:
         counts = dict(counts)
         with self._lock:
             existing = self._dataset
-        if existing:
-            if not employees:
-                employees = existing.employees
-                issues = list(existing.issues) + list(issues)
-                counts["found_fields"] = counts.get("found_fields") or existing.sheet_counts.get("found_fields") or []
-                counts["Employee_Master"] = len(employees)
+            awaiting = self._awaiting_formulas
+        new_has_employees = bool(employees)
+        new_has_rules = bool(increment_rules or salary_bands or correction_rules)
+        if existing and awaiting and not new_has_employees:
+            employees = existing.employees
+            issues = list(existing.issues) + list(issues)
+            counts["found_fields"] = existing.sheet_counts.get("found_fields") or counts.get("found_fields") or []
+            counts["Employee_Master"] = len(employees)
+            if not increment_rules:
+                increment_rules = existing.increment_rules
+            if not salary_bands:
+                salary_bands = existing.salary_bands
+            if not correction_rules:
+                correction_rules = existing.correction_rules
+        elif existing and awaiting and new_has_employees and new_has_rules:
             if not increment_rules:
                 increment_rules = existing.increment_rules
             if not salary_bands:

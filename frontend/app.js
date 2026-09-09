@@ -201,7 +201,9 @@ async function uploadFile(file) {
     const counts = dataset.sheet_counts || {};
     const missing = dataset.missing_sheets || [];
     const fields = dataset.found_fields || [];
-    state.awaitingFormulas = Boolean(dataset.awaiting_formulas || missing.length);
+    state.awaitingFormulas = Boolean(
+      dataset.awaiting_formulas || missing.length || (counts.Increment_Grid === 0 && counts.Salary_Band === 0)
+    );
     const issueHtml = issues.length ? reportishIssues(issues) : "";
     const fieldLine = fields.length
       ? `<p>I found these employee columns:<br><em>${fields.join(", ")}</em></p>`
