@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from threading import Lock
 
-from app.defaults import apply_defaults
+from app.defaults import apply_defaults, ensure_coverage
 from app.engine import recommend_all
 from app.ingest import read_workbook
 from app.models import Dataset
@@ -62,6 +62,9 @@ class DatasetStore:
         if awaiting:
             reports = []
         else:
+            increment_rules, salary_bands, correction_rules = ensure_coverage(
+                employees, increment_rules, salary_bands, correction_rules
+            )
             reports = recommend_all(employees, salary_bands, increment_rules, correction_rules)
         dataset = Dataset(
             source_filename=filename,
@@ -89,6 +92,9 @@ class DatasetStore:
             dataset.increment_rules,
             dataset.salary_bands,
             dataset.correction_rules,
+        )
+        increment_rules, salary_bands, correction_rules = ensure_coverage(
+            dataset.employees, increment_rules, salary_bands, correction_rules
         )
         counts = dict(dataset.sheet_counts)
         counts["used_defaults"] = used

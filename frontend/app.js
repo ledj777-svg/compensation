@@ -137,7 +137,7 @@ function reportTable(rows) {
         <thead>
           <tr>
             <th>ID</th><th>Employee</th><th>Dept / Grade</th><th>Rating</th>
-            <th class="num">Current</th><th class="num">Compa</th><th>Position</th>
+            <th class="num">Current</th><th class="num">Compa Ratio</th><th>Salary Position</th>
             <th class="num">Increment</th><th class="num">Correction</th><th class="num">Recommended</th>
           </tr>
         </thead>

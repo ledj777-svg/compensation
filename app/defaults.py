@@ -147,6 +147,56 @@ def default_salary_bands(employees: list[Employee]) -> list[SalaryBand]:
     return bands
 
 
+def ensure_coverage(
+    employees: list[Employee],
+    increment_rules: list[IncrementRule],
+    salary_bands: list[SalaryBand],
+    correction_rules: list[CorrectionRule],
+) -> tuple[list[IncrementRule], list[SalaryBand], list[CorrectionRule]]:
+    """Fill missing grades/bands so every employee can get a compa, increment, and position."""
+    from app.engine import find_salary_band
+
+    if not correction_rules:
+        correction_rules = list(DEFAULT_CORRECTION_RULES)
+
+    covered = {
+        (normalize_grade(rule.grade), rule.performance_rating) for rule in increment_rules
+    }
+    extra_rules = list(increment_rules)
+    grades = {normalize_grade(employee.grade) or "A1" for employee in employees}
+    for grade in grades:
+        for rating, pct in DEFAULT_RATING_INCREMENT.items():
+            if (grade, rating) not in covered:
+                extra_rules.append(
+                    IncrementRule(grade=grade, performance_rating=rating, increment_pct=pct)
+                )
+                covered.add((grade, rating))
+
+    extra_bands = list(salary_bands)
+    for employee in employees:
+        if find_salary_band(employee, extra_bands) is not None:
+            continue
+        empirical = _empirical_points(employee, employees)
+        if empirical:
+            minimum, mid, maximum = empirical
+            years = float(employee.years_at_level if employee.years_at_level is not None else 0)
+        else:
+            year_key, minimum, mid, maximum = _pick_points(employee.grade, employee.years_at_level)
+            years = employee.years_at_level if employee.years_at_level is not None else year_key
+        extra_bands.append(
+            SalaryBand(
+                department=employee.department or "General",
+                grade=employee.grade or "A1",
+                years_at_level=float(years),
+                min_salary=minimum,
+                median_salary=mid,
+                max_salary=maximum,
+                raw_years_label=f"{years:g} Years",
+            )
+        )
+    return extra_rules, extra_bands, correction_rules
+
+
 def apply_defaults(
     employees: list[Employee],
     increment_rules: list[IncrementRule],

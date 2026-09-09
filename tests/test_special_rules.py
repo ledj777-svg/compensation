@@ -47,6 +47,22 @@ def test_rule2_above_max_blocks_correction_even_if_grid_would_pay():
     assert any("correction withheld" in flag.lower() for flag in result.flags)
 
 
+def test_unlisted_grade_still_gets_compa_and_increment():
+    from app.defaults import ensure_coverage
+
+    employee = _employee(employee_id="1003", grade="A3", current_salary=13, years_at_level=2)
+    increment_rules, salary_bands, correction_rules = ensure_coverage(
+        [employee],
+        INCREMENTS,
+        BANDS,
+        CORRECTIONS,
+    )
+    result = recommend_employee(employee, salary_bands, increment_rules, correction_rules)
+    assert result.salary_position != "Unknown"
+    assert result.compa_ratio is not None
+    assert result.increment_pct > 0
+
+
 def test_rule3_same_dept_grade_years_share_the_same_band():
     low = recommend_employee(_employee(employee_id="1001", current_salary=10), BANDS, INCREMENTS, CORRECTIONS)
     high = recommend_employee(_employee(employee_id="1002", current_salary=16), BANDS, INCREMENTS, CORRECTIONS)

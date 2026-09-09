@@ -72,6 +72,10 @@ def find_salary_band(
         if normalize_key(band.department) == dept and normalize_grade(band.grade) == grade
     ]
     if not candidates:
+        candidates = [band for band in bands if normalize_grade(band.grade) == grade]
+    if not candidates and years is not None:
+        candidates = [band for band in bands if band.years_at_level == years]
+    if not candidates:
         return None
     if years is None:
         return min(candidates, key=lambda band: (band.years_at_level, band.min_salary))
@@ -91,6 +95,9 @@ def find_increment(
     rating = employee.performance_rating
     for rule in rules:
         if normalize_grade(rule.grade) == grade and rule.performance_rating == rating:
+            return rule
+    for rule in rules:
+        if rule.performance_rating == rating:
             return rule
     return None
 
