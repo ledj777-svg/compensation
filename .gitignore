@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.idea/
+.vscode/
+*.log
+uploads/
+.DS_Store
+Thumbs.db
+_tmp_emp.xlsx
